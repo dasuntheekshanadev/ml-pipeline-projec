@@ -1,0 +1,26 @@
+services:
+
+  # ── TRAINING JOB ──────────────────────────────────────────────────────────
+  training:
+    build:
+      context: ./training
+    volumes:
+      # Mount a shared folder so model.pkl comes out of the container
+      # host path: ./model-output   container path: /output
+      - ./model-output:/output
+    # This container runs, saves the model, then exits — it's a Job not a Service
+
+  # ── SERVING API ───────────────────────────────────────────────────────────
+  serving:
+    build:
+      context: ./serving
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount the same folder so the API can read the model
+      - ./model-output:/model
+    environment:
+      - MODEL_PATH=/model/model.pkl
+    depends_on:
+      - training   # wait for training to finish first
+    # This container runs forever, serving predictions
